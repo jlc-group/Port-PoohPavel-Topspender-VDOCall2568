@@ -222,29 +222,82 @@ async function getVDOCallData() {
   }
 }
 
+// Thai character normalization for better search
+function normalizeThaiText(text) {
+  if (!text) return '';
+  return text.toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/[่้๊๋]/g, '') // Remove Thai tone marks for better matching
+    .replace(/[ัิ]/g, '')   // Remove Thai vowels for better matching
+    .trim();
+}
+
+// Calculate match score for search results
+function calculateMatchScore(searchTerm, customer) {
+  const normalizedSearch = normalizeThaiText(searchTerm);
+  const cleanPhone = searchTerm.replace(/[^0-9]/g, '');
+  let score = 0;
+
+  // Phone number matching (highest priority for phone searches)
+  if (cleanPhone && customer.เบอรโทร) {
+    const customerPhone = customer.เบอรโทร.replace(/[^0-9]/g, '');
+    if (customerPhone === cleanPhone) {
+      score += 10; // Exact phone match
+    } else if (customerPhone.includes(cleanPhone) && cleanPhone.length >= 4) {
+      score += 5; // Partial phone match (only if meaningful length)
+    }
+  }
+
+  // Name matching
+  const firstName = normalizeThaiText(customer.ชื่อ);
+  const lastName = normalizeThaiText(customer.นามสกุล);
+  const fullName = normalizeThaiText(`${customer.ชื่อ} ${customer.นามสกุล}`);
+
+  // Exact full name match (highest score)
+  if (fullName === normalizedSearch) {
+    score += 15;
+  }
+  // Exact first name match
+  else if (firstName === normalizedSearch) {
+    score += 12;
+  }
+  // Exact last name match
+  else if (lastName === normalizedSearch) {
+    score += 12;
+  }
+  // Partial name matches (lower scores)
+  else if (firstName.includes(normalizedSearch) && normalizedSearch.length >= 2) {
+    score += 8;
+  }
+  else if (lastName.includes(normalizedSearch) && normalizedSearch.length >= 2) {
+    score += 8;
+  }
+  else if (fullName.includes(normalizedSearch) && normalizedSearch.length >= 2) {
+    score += 6;
+  }
+
+  return score;
+}
+
 // Search customer by name, surname, or phone number in Top Spender sheet
 async function searchTopSpenderByPhone(searchTerm) {
   try {
     const customers = await getTopSpenderData();
-    const cleanSearch = searchTerm.toString().toLowerCase().trim();
-    const cleanPhone = searchTerm.replace(/[^0-9]/g, '');
+    if (!searchTerm || !searchTerm.trim()) return null;
 
-    return customers.find(customer => {
-      // Check phone number
-      const customerPhone = customer.เบอรโทร.replace(/[^0-9]/g, '');
-      if (customerPhone.includes(cleanPhone) || cleanPhone.includes(customerPhone)) {
-        return true;
-      }
+    // Calculate match scores for all customers
+    const matches = customers
+      .map(customer => ({
+        customer,
+        score: calculateMatchScore(searchTerm, customer)
+      }))
+      .filter(match => match.score > 0)
+      .sort((a, b) => b.score - a.score); // Sort by highest score first
 
-      // Check name (without spaces and case insensitive)
-      const fullName = `${customer.ชื่อ} ${customer.นามสกุล}`.toLowerCase().replace(/\s+/g, '');
-      const customerName = customer.ชื่อ.toLowerCase().replace(/\s+/g, '');
-      const customerSurname = customer.นามสกุล.toLowerCase().replace(/\s+/g, '');
-
-      return fullName.includes(cleanSearch.replace(/\s+/g, '')) ||
-             customerName.includes(cleanSearch.replace(/\s+/g, '')) ||
-             customerSurname.includes(cleanSearch.replace(/\s+/g, ''));
-    });
+    // Return the best match (highest score) or null if no matches
+    return matches.length > 0 ? matches[0].customer : null;
 
   } catch (error) {
     console.error('เกิดข้อผิดพลาดในการค้นหา Top Spender:', error);
@@ -256,25 +309,19 @@ async function searchTopSpenderByPhone(searchTerm) {
 async function searchVDOCallByPhone(searchTerm) {
   try {
     const customers = await getVDOCallData();
-    const cleanSearch = searchTerm.toString().toLowerCase().trim();
-    const cleanPhone = searchTerm.replace(/[^0-9]/g, '');
+    if (!searchTerm || !searchTerm.trim()) return null;
 
-    return customers.find(customer => {
-      // Check phone number
-      const customerPhone = customer.เบอรโทร.replace(/[^0-9]/g, '');
-      if (customerPhone.includes(cleanPhone) || cleanPhone.includes(customerPhone)) {
-        return true;
-      }
+    // Calculate match scores for all customers using the same scoring system
+    const matches = customers
+      .map(customer => ({
+        customer,
+        score: calculateMatchScore(searchTerm, customer)
+      }))
+      .filter(match => match.score > 0)
+      .sort((a, b) => b.score - a.score); // Sort by highest score first
 
-      // Check name (without spaces and case insensitive)
-      const fullName = `${customer.ชื่อ} ${customer.นามสกุล}`.toLowerCase().replace(/\s+/g, '');
-      const customerName = customer.ชื่อ.toLowerCase().replace(/\s+/g, '');
-      const customerSurname = customer.นามสกุล.toLowerCase().replace(/\s+/g, '');
-
-      return fullName.includes(cleanSearch.replace(/\s+/g, '')) ||
-             customerName.includes(cleanSearch.replace(/\s+/g, '')) ||
-             customerSurname.includes(cleanSearch.replace(/\s+/g, ''));
-    });
+    // Return the best match (highest score) or null if no matches
+    return matches.length > 0 ? matches[0].customer : null;
 
   } catch (error) {
     console.error('เกิดข้อผิดพลาดในการค้นหา VDO Call:', error);
