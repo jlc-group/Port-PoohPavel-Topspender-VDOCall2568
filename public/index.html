@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JULA'S HERB ACNE LAB SERIES "ONE DAY TRIP WITH POOHPAVEL" 29 NOV 2025</title>
+
+    <!-- React & Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- Thai Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+        .tab-active {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            color: white;
+        }
+        .header-gradient {
+            background: linear-gradient(135deg, #16a34a 0%, #14532d 100%);
+        }
+        .campaign-image {
+            max-width: 100%;
+            height: auto;
+            margin: 0.5rem auto;
+            display: block;
+            border-radius: 0.5rem;
+        }
+        /* Mobile Responsive - Mobile First */
+        @media (max-width: 640px) {
+            .campaign-image {
+                max-width: 95%;
+                margin: 0.5rem auto;
+            }
+            h1 {
+                font-size: 1.25rem !important;
+            }
+            .search-input {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+            .countdown-timer {
+                gap: 0.25rem !important;
+            }
+            .countdown-timer > div {
+                min-width: 50px !important;
+            }
+        }
+        @media (min-width: 641px) and (max-width: 768px) {
+            .campaign-image {
+                max-width: 90%;
+                margin: 0.75rem auto;
+            }
+            h1 {
+                font-size: 1.5rem !important;
+            }
+        }
+        /* Sticky Search */
+        .sticky-search-container {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem 0;
+            margin: 0 -1rem;
+        }
+        .sticky-search-wrapper {
+            max-width: 6xl;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        /* Table Responsive - Fixed for single row display */
+        .responsive-table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        /* Remove mobile card transformation - keep single row table */
+        @media (max-width: 768px) {
+            .responsive-table-wrapper {
+                overflow-x: auto;
+                margin: 0 -1rem;
+                padding: 0 1rem;
+            }
+            .mobile-table {
+                display: table !important;
+                width: 100%;
+                min-width: 500px; /* Ensure minimum width for readability */
+            }
+            .mobile-table thead {
+                display: table-header-group !important;
+            }
+            .mobile-table tbody {
+                display: table-row-group !important;
+            }
+            .mobile-table tr {
+                display: table-row !important;
+                border: none !important;
+                margin: 0 !important;
+                background: transparent !important;
+            }
+            .mobile-table td {
+                display: table-cell !important;
+                text-align: left !important;
+                position: static !important;
+                padding: 0.5rem 0.75rem !important;
+                border-bottom: 1px solid #e5e7eb !important;
+                vertical-align: middle !important;
+            }
+            .mobile-table td::before {
+                display: none !important;
+            }
+        }
+        /* Search inline layout */
+        .search-inline {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+        .search-inline .flex-1 {
+            flex: 1;
+            min-width: 0;
+        }
+        @media (max-width: 640px) {
+            .search-inline {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+        }
+        /* Green button styling */
+        .btn-green {
+            background: #16a34a;
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .btn-green:hover {
+            background: #15803d;
+        }
+        .btn-green:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+        }
+        .btn-gray {
+            background: #6b7280;
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .btn-gray:hover {
+            background: #4b5563;
+        }
+        /* Green focus ring */
+        .focus-green:focus {
+            border-color: #16a34a;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+        }
+
+        /* Responsive adjustments for countdown timer */
+        @media (max-width: 768px) {
+            .countdown-header {
+                flex-direction: row !important;
+                text-align: left !important;
+                gap: 0.5rem;
+                font-size: 0.75rem !important;
+            }
+
+            .countdown-header p:first-child {
+                flex: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .countdown-header p:last-child {
+                flex-shrink: 0;
+            }
+
+            .countdown-timer {
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+
+            .countdown-timer > div {
+                min-width: 60px;
+            }
+        }
+        /* Green accent for badges */
+        .badge-yellow {
+            background: #eab308 !important;
+        }
+        .badge-blue {
+            background: #3b82f6 !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function LuckyDrawApp() {
+            const [activeTab, setActiveTab] = useState('top-spender');
+            const [searchPhone, setSearchPhone] = useState('');
+            const [topSpenderData, setTopSpenderData] = useState([]);
+            const [vdoCallData, setVdoCallData] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+            const [searchResults, setSearchResults] = useState(null);
+
+            // Statistics and countdown states
+            const [countdown, setCountdown] = useState({
+                days: 0,
+                hours: 0,
+                minutes: 0,
+                seconds: 0
+            });
+
+            // API base URL
+            const API_BASE = window.location.origin === 'http://localhost:3003'
+                ? 'http://localhost:3003'
+                : '';
+
+            // Data masking functions
+            const maskName = (name) => {
+                if (!name || name.length <= 2) return name || '';
+                const visibleLength = Math.min(4, Math.ceil(name.length / 3));
+                return name.substring(0, visibleLength) + '*'.repeat(Math.max(0, name.length - visibleLength));
+            };
+
+            const maskEmail = (email) => {
+                if (!email || !email.includes('@')) return email || '';
+                const [username, domain] = email.split('@');
+                const maskedUsername = username.length > 2 ? username.substring(0, 2) + '***' : username;
+                return `${maskedUsername}@${domain}`;
+            };
+
+            const maskPhone = (phone) => {
+                if (!phone) return '-';
+                const digits = phone.replace(/[^0-9]/g, '');
+                if (digits.length <= 4) return phone;
+                const lastDigits = digits.slice(-4);
+                return `***-***-${lastDigits}`;
+            };
+
+            // Fetch data on component mount
+            useEffect(() => {
+                fetchData();
+            }, []);
+
+            // Countdown timer effect
+            useEffect(() => {
+                const calculateCountdown = () => {
+                    const now = new Date();
+                    const targetDate = new Date('2025-11-25T23:59:59'); // 25 พ.ย. 2568 เวลา 23.59.59 น.
+
+                    const difference = targetDate - now;
+
+                    if (difference > 0) {
+                        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+                        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+                        setCountdown({ days, hours, minutes, seconds });
+                    } else {
+                        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+                    }
+                };
+
+                // Calculate immediately
+                calculateCountdown();
+
+                // Update every second
+                const timer = setInterval(calculateCountdown, 1000);
+
+                return () => clearInterval(timer);
+            }, []);
+
+            const fetchData = async () => {
+                setLoading(true);
+                setError('');
+
+                try {
+                    const [topSpenderRes, vdoCallRes] = await Promise.all([
+                        fetch(`${API_BASE}/api/top-spender/customers`),
+                        fetch(`${API_BASE}/api/vdo-call/customers`)
+                    ]);
+
+                    if (!topSpenderRes.ok || !vdoCallRes.ok) {
+                        throw new Error('ไม่สามารถดึงข้อมูลได้');
+                    }
+
+                    const topSpenderResult = await topSpenderRes.json();
+                    const vdoCallResult = await vdoCallRes.json();
+
+                    setTopSpenderData(topSpenderResult.data || []);
+                    setVdoCallData(vdoCallResult.data || []);
+
+                } catch (err) {
+                    setError('เกิดข้อผิดพลาดในการดึงข้อมูล: ' + err.message);
+                    console.error('Error:', err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleSearch = async () => {
+                if (!searchPhone.trim()) {
+                    setSearchResults(null);
+                    return;
+                }
+
+                setLoading(true);
+                setError('');
+
+                try {
+                    let endpoint = '';
+                    if (activeTab === 'top-spender') {
+                        endpoint = `${API_BASE}/api/top-spender/search/${searchPhone}`;
+                    } else {
+                        endpoint = `${API_BASE}/api/vdo-call/search/${searchPhone}`;
+                    }
+
+                    const response = await fetch(endpoint);
+                    const result = await response.json();
+
+                    if (result.success) {
+                        setSearchResults([result.data]);
+                    } else {
+                        setSearchResults([]);
+                        setError(result.error || 'ไม่พบข้อมูล');
+                    }
+
+                } catch (err) {
+                    setError('เกิดข้อผิดพลาดในการค้นหา: ' + err.message);
+                    setSearchResults([]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const currentData = searchResults !== null
+                ? searchResults
+                : activeTab === 'top-spender'
+                    ? topSpenderData
+                    : vdoCallData;
+
+            const displayData = searchPhone.trim()
+                ? currentData.filter(item => {
+                    const searchTerm = searchPhone.toLowerCase().trim();
+                    const cleanPhone = searchPhone.replace(/[^0-9]/g, '');
+
+                    // Check phone number match
+                    if (item.เบอรโทร) {
+                        const customerPhone = item.เบอรโทร.replace(/[^0-9]/g, '');
+                        if (customerPhone.includes(cleanPhone) || cleanPhone.includes(customerPhone)) {
+                            return true;
+                        }
+                    }
+
+                    // Check name match (case insensitive, partial)
+                    const fullName = `${item.ชื่อ} ${item.นามสกุล}`.toLowerCase();
+                    const firstName = item.ชื่อ.toLowerCase();
+                    const lastName = item.นามสกุล.toLowerCase();
+
+                    return fullName.includes(searchTerm) ||
+                           firstName.includes(searchTerm) ||
+                           lastName.includes(searchTerm);
+                  })
+                : currentData;
+
+            return (
+                <div className="min-h-screen">
+                    {/* Header */}
+                    <div className="header-gradient text-white p-4 sm:p-6 shadow-lg">
+                        <div className="max-w-full mx-auto px-2">
+                            {/* Admin Button - Top Right */}
+                            <div className="flex justify-end mb-2">
+                                <a href="/admin" className="text-xs text-yellow-200 hover:text-white transition-colors underline">
+                                    ⚙️ Admin
+                                </a>
+                            </div>
+                            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-2">JULA'S HERB ACNE LAB SERIES "ONE DAY TRIP WITH POOHPAVEL" 29 NOV 2025</h1>
+                            <p className="text-center text-green-100 text-xs sm:text-sm md:text-base mb-1">ระบบตรวจสอบสิทธิ์ Top Spender และ VDO Call</p>
+                            <p className="text-center text-yellow-200 text-xs sm:text-xs md:text-sm mb-3 font-medium">สิทธิ์ตั้งแต่วันที่ 12 พ.ย. 2568 เวลา 18.00.00 น. ถึง 14 พ.ย. 2568 เวลา 23.59.59 น.</p>
+
+                            {/* Campaign Image */}
+                            <img
+                                src="./image/POOHPAVEL 29 NOV 2025.jpg"
+                                alt="POOHPAVEL Campaign"
+                                className="campaign-image"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="max-w-full mx-auto p-2 sm:p-4 md:p-6">
+                        {/* Statistics Cards */}
+                        <div className="flex flex-row gap-2 mb-6 justify-between">
+                            <div className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow-md p-3 sm:p-4">
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <p className="text-xs sm:text-sm mb-1">Top Spender</p>
+                                    <p className="text-xl sm:text-2xl md:text-3xl font-bold">{topSpenderData.length}</p>
+                                    <p className="text-xs text-green-100">ท่านที่มีสิทธิ์</p>
+                                </div>
+                            </div>
+                            <div className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg shadow-md p-3 sm:p-4">
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <p className="text-xs sm:text-sm mb-1">VDO Call</p>
+                                    <p className="text-xl sm:text-2xl md:text-3xl font-bold">{vdoCallData.length}</p>
+                                    <p className="text-xs text-green-100">ท่านที่มีสิทธิ์</p>
+                                </div>
+                            </div>
+                            <div className="flex-1 bg-gradient-to-r from-green-700 to-green-800 text-white rounded-lg shadow-md p-3 sm:p-4">
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <p className="text-xs sm:text-sm mb-1">รวมทั้งหมด</p>
+                                    <p className="text-xl sm:text-2xl md:text-3xl font-bold">{topSpenderData.length + vdoCallData.length}</p>
+                                    <p className="text-xs text-green-100">ท่านที่มีสิทธิ์</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Countdown Timer */}
+                        <div className="mb-6">
+                            <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow-md p-3 sm:p-4">
+                                {/* Header */}
+                                <div className="text-center mb-2 sm:mb-4">
+                                    <p className="text-sm sm:text-base md:text-lg font-bold">นับเวลาถอยหลัง</p>
+                                </div>
+
+                                {/* Time display */}
+                                <div className="flex justify-center items-center space-x-2 sm:space-x-4 md:space-x-6 countdown-timer">
+                                    <div className="text-center flex-1">
+                                        <p className="text-lg sm:text-xl md:text-2xl font-bold">{countdown.days}</p>
+                                        <p className="text-xs">วัน</p>
+                                    </div>
+                                    <div className="text-center flex-1">
+                                        <p className="text-lg sm:text-xl md:text-2xl font-bold">{String(countdown.hours).padStart(2, '0')}</p>
+                                        <p className="text-xs">ชั่วโมง</p>
+                                    </div>
+                                    <div className="text-center flex-1">
+                                        <p className="text-lg sm:text-xl md:text-2xl font-bold">{String(countdown.minutes).padStart(2, '0')}</p>
+                                        <p className="text-xs">นาที</p>
+                                    </div>
+                                    <div className="text-center flex-1">
+                                        <p className="text-lg sm:text-xl md:text-2xl font-bold">{String(countdown.seconds).padStart(2, '0')}</p>
+                                        <p className="text-xs">วินาที</p>
+                                    </div>
+                                </div>
+
+                                <p className="text-xs mt-2 sm:mt-3 text-center text-yellow-200">(25 พ.ย. 2568 23:59:59)</p>
+                            </div>
+                        </div>
+
+                        {/* Search Section - Sticky */}
+                        <div className="sticky-search-container">
+                            <div className="sticky-search-wrapper">
+                                <div className="bg-white rounded-lg shadow-md p-3 sm:p-4 mb-6">
+                                    <div className="search-inline">
+                                        <div className="flex-1">
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                                🔍 ค้นหาด้วยชื่อ นามสกุล หรือเบอร์โทรศัพท์
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={searchPhone}
+                                                onChange={(e) => setSearchPhone(e.target.value)}
+                                                placeholder="กรอกชื่อ นามสกุล หรือเบอร์โทรศัพท์"
+                                                className="search-input w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus-green text-sm"
+                                                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={handleSearch}
+                                            disabled={loading}
+                                            className={`btn-green px-4 py-2 sm:px-6 rounded-lg transition-colors text-xs sm:text-sm disabled:bg-gray-400`}
+                                        >
+                                            {loading ? 'ค้นหา...' : 'ค้นหา'}
+                                        </button>
+                                        {searchPhone && (
+                                            <button
+                                                onClick={() => {
+                                                    setSearchPhone('');
+                                                    setSearchResults(null);
+                                                }}
+                                                className="btn-gray px-3 py-2 sm:px-4 rounded-lg transition-colors text-xs sm:text-sm"
+                                            >
+                                                ล้าง
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                            <div className="flex border-b">
+                                <button
+                                    onClick={() => {
+                                        setActiveTab('top-spender');
+                                        setSearchPhone('');
+                                        setSearchResults(null);
+                                    }}
+                                    className={`flex-1 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-colors text-xs sm:text-sm md:text-base ${
+                                        activeTab === 'top-spender'
+                                            ? 'tab-active'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    🎁 Top Spender
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setActiveTab('vdo-call');
+                                        setSearchPhone('');
+                                        setSearchResults(null);
+                                    }}
+                                    className={`flex-1 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-colors text-xs sm:text-sm md:text-base ${
+                                        activeTab === 'vdo-call'
+                                            ? 'tab-active'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    📹 VDO Call
+                                </button>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-3 sm:p-4 md:p-6">
+                                {loading ? (
+                                    <div className="text-center py-8">
+                                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                                        <p className="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p>
+                                    </div>
+                                ) : error ? (
+                                    <div className="text-center py-8">
+                                        <div className="text-green-600 text-lg mb-2">⚠️ {error}</div>
+                                        <button
+                                            onClick={fetchData}
+                                            className="btn-green px-4 py-2 rounded hover:bg-green-700"
+                                        >
+                                            ลองใหม่
+                                        </button>
+                                    </div>
+                                ) : displayData.length === 0 ? (
+                                    <div className="text-center py-12 text-gray-500">
+                                        <div className="text-6xl mb-4">📋</div>
+                                        <p className="text-xl font-medium mb-2">
+                                            {searchPhone ? 'ไม่พบข้อมูลที่ค้นหา' : 'ยังไม่มีข้อมูลลูกค้า'}
+                                        </p>
+                                        <p className="text-sm">
+                                            {searchPhone
+                                                ? 'กรุณาตรวจสอบชื่อ นามสกุล หรือเบอร์โทรศัพท์อีกครั้ง'
+                                                : 'กรุณาเพิ่มข้อมูลลูกค้าใน Google Sheets'
+                                            }
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="responsive-table-wrapper">
+                                        <div className="overflow-x-auto -mx-3 sm:-mx-4 md:mx-0 px-3 sm:px-4 md:px-0">
+                                            <table className="w-full table-auto mobile-table min-w-[300px] sm:min-w-[400px]">
+                                                <thead>
+                                                    <tr className="bg-gray-50 border-b-2 border-gray-200">
+                                                        <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">ลำดับ</th>
+                                                        <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">ชื่อ-นามสกุล</th>
+                                                        <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">
+                                                            {activeTab === 'top-spender' ? 'สิทธิ์ TopSpender' : 'สิทธิ์ VDO Call'}
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {displayData.map((item, index) => (
+                                                        <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
+                                                            <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-900">
+                                                                {item.ลำดับ || index + 1}
+                                                            </td>
+                                                            <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-900 font-medium">
+                                                                {maskName(item.ชื่อ)} {maskName(item.นามสกุล)}
+                                                            </td>
+                                                            <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm">
+                                                                <span className={`px-2 py-1 rounded-full text-white font-semibold text-xs sm:text-sm ${
+                                                                    activeTab === 'top-spender'
+                                                                        ? 'badge-yellow'
+                                                                        : 'badge-blue'
+                                                                }`}>
+                                                                    {activeTab === 'top-spender'
+                                                                        ? (item.สิทธิ_TopSpender || 0)
+                                                                        : (item.สิทธิ_VDO_Call || 0)
+                                                                    } สิทธิ์
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                            <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600 text-center">
+                                                รวมทั้งหมด {displayData.length} รายการ
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="mt-6 sm:mt-8 text-center text-gray-500 text-xs sm:text-sm">
+                            <p>🎯 Lucky Draw Customer Portal 2568</p>
+                            <p>พัฒนาด้วย ❤️ สำหรับทีมงาน</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Render the app
+        ReactDOM.render(<LuckyDrawApp />, document.getElementById('root'));
+
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>

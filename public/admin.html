@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - POOHPAVEL 29 NOV 2025</title>
+
+    <!-- React & Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- Thai Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+        .tab-active {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+        }
+        .header-gradient {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        }
+        .search-input {
+            font-size: 16px; /* Prevent zoom on iOS */
+        }
+        /* Sticky Search */
+        .sticky-search-container {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem 0;
+            margin: 0 -1rem;
+        }
+        .sticky-search-wrapper {
+            max-width: 6xl;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        /* Table Responsive */
+        .responsive-table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -1rem;
+            padding: 0 1rem;
+        }
+        .admin-table {
+            min-width: 600px;
+        }
+        @media (max-width: 640px) {
+            .admin-table {
+                min-width: 500px;
+            }
+        }
+        /* Green button styling */
+        .btn-green {
+            background: #16a34a;
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .btn-green:hover {
+            background: #15803d;
+        }
+        .btn-green:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+        }
+        .btn-red {
+            background: #dc2626;
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .btn-red:hover {
+            background: #b91c1c;
+        }
+        .btn-gray {
+            background: #6b7280;
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .btn-gray:hover {
+            background: #4b5563;
+        }
+        /* Green focus ring */
+        .focus-green:focus {
+            border-color: #16a34a;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+        }
+        /* Search inline layout */
+        .search-inline {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+        .search-inline .flex-1 {
+            flex: 1;
+            min-width: 0;
+        }
+        @media (max-width: 640px) {
+            .search-inline {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+        }
+        /* Yellow badge */
+        .badge-yellow {
+            background: #eab308 !important;
+        }
+        /* Blue badge */
+        .badge-blue {
+            background: #3b82f6 !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function AdminDashboard() {
+            const [activeTab, setActiveTab] = useState('all');
+            const [searchPhone, setSearchPhone] = useState('');
+            const [topSpenderData, setTopSpenderData] = useState([]);
+            const [vdoCallData, setVdoCallData] = useState([]);
+            const [registeredData, setRegisteredData] = useState([]);
+            const [allData, setAllData] = useState([]);
+            const [registeredUsersData, setRegisteredUsersData] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+            const [searchResults, setSearchResults] = useState(null);
+            const [filterRegistered, setFilterRegistered] = useState(false);
+
+            // API base URL
+            const API_BASE = window.location.origin === 'http://localhost:3005'
+                ? 'http://localhost:3005'
+                : '';
+
+            // Admin sees full data (no masking)
+            const maskName = (name) => name || '';
+            const maskEmail = (email) => email || '';
+            const maskPhone = (phone) => phone || '';
+
+            // Check if Top Spender customer is registered
+            const checkRegistrationStatus = (topSpenderCustomer, registeredData) => {
+                if (!registeredData || registeredData.length === 0) return false;
+
+                return registeredData.some(registered => {
+                    // Clean phone numbers (remove leading 0 and special characters)
+                    const topSpenderPhone = topSpenderCustomer.เบอรโทร?.replace(/[^0-9]/g, '').replace(/^0/, '') || '';
+                    const registeredPhone = registered.เบอรโทร?.replace(/[^0-9]/g, '').replace(/^0/, '') || '';
+
+                    // Check phone match only (as requested by user)
+                    const phoneMatch = topSpenderPhone === registeredPhone && topSpenderPhone !== '';
+
+                    return phoneMatch;
+                });
+            };
+
+            // Check if any customer (Top Spender or VDO Call) is registered
+            const checkAnyCustomerRegistrationStatus = (customer, registeredData) => {
+                if (!registeredData || registeredData.length === 0) return false;
+
+                return registeredData.some(registered => {
+                    // Clean phone numbers (remove leading 0 and special characters)
+                    const customerPhone = customer.เบอรโทร?.replace(/[^0-9]/g, '').replace(/^0/, '') || '';
+                    const registeredPhone = registered.เบอรโทร?.replace(/[^0-9]/g, '').replace(/^0/, '') || '';
+
+                    // Check phone match only
+                    const phoneMatch = customerPhone === registeredPhone && customerPhone !== '';
+
+                    return phoneMatch;
+                });
+            };
+
+            // Fetch data on component mount
+            useEffect(() => {
+                fetchData();
+            }, []);
+
+            const fetchData = async () => {
+                setLoading(true);
+                setError('');
+
+                try {
+                    const [topSpenderRes, vdoCallRes, registeredRes] = await Promise.all([
+                        fetch(`${API_BASE}/api/top-spender/customers`),
+                        fetch(`${API_BASE}/api/vdo-call/customers`),
+                        fetch(`${API_BASE}/api/registered-top-spender/customers`)
+                    ]);
+
+                    if (!topSpenderRes.ok || !vdoCallRes.ok || !registeredRes.ok) {
+                        throw new Error('ไม่สามารถดึงข้อมูลได้');
+                    }
+
+                    const topSpenderResult = await topSpenderRes.json();
+                    const vdoCallResult = await vdoCallRes.json();
+                    const registeredResult = await registeredRes.json();
+
+                    // Prepare Top Spender data with registration status
+                    const topSpenderWithStatus = (topSpenderResult.data || []).map(item => ({
+                        ...item,
+                        ประเภท: 'Top Spender',
+                        สิทธิ_TopSpender: item.สิทธิ_TopSpender || 0,
+                        สิทธิ_VDO_Call: 0,
+                        สถานะลงทะเบียน: checkRegistrationStatus(item, registeredResult.data || [])
+                    }));
+
+                    // Prepare VDO Call data with proper registration status
+                    const vdoCallWithStatus = (vdoCallResult.data || []).map(item => ({
+                        ...item,
+                        ประเภท: 'VDO Call',
+                        สิทธิ_TopSpender: 0,
+                        สิทธิ_VDO_Call: item.สิทธิ_VDO_Call || 0,
+                        สถานะลงทะเบียน: checkAnyCustomerRegistrationStatus(item, registeredResult.data || [])
+                    }));
+
+                    setTopSpenderData(topSpenderWithStatus);
+                    setVdoCallData(vdoCallWithStatus);
+                    setRegisteredData(registeredResult.data || []);
+
+                    // Combine data for "All" tab
+                    const combined = [...topSpenderWithStatus, ...vdoCallWithStatus];
+                    setAllData(combined);
+
+                    // Create registered users list (all users who are registered)
+                    const allRegisteredUsers = [...topSpenderWithStatus, ...vdoCallWithStatus]
+                        .filter(item => item.สถานะลงทะเบียน === true);
+                    setRegisteredUsersData(allRegisteredUsers);
+
+                } catch (err) {
+                    setError('เกิดข้อผิดพลาดในการดึงข้อมูล: ' + err.message);
+                    console.error('Error:', err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleSearch = async () => {
+                if (!searchPhone.trim()) {
+                    setSearchResults(null);
+                    return;
+                }
+
+                setLoading(true);
+                setError('');
+
+                try {
+                    // For admin, search in combined data
+                    const filteredData = allData.filter(item => {
+                        const searchTerm = searchPhone.toLowerCase().trim();
+                        const cleanPhone = searchPhone.replace(/[^0-9]/g, '');
+
+                        // Check phone number match
+                        if (item.เบอรโทร) {
+                            const customerPhone = item.เบอรโทร.replace(/[^0-9]/g, '');
+                            if (customerPhone.includes(cleanPhone) || cleanPhone.includes(customerPhone)) {
+                                return true;
+                            }
+                        }
+
+                        // Check name match
+                        const fullName = `${item.ชื่อ} ${item.นามสกุล}`.toLowerCase();
+                        const firstName = item.ชื่อ.toLowerCase();
+                        const lastName = item.นามสกุล.toLowerCase();
+
+                        return fullName.includes(searchTerm) ||
+                               firstName.includes(searchTerm) ||
+                               lastName.includes(searchTerm);
+                    });
+
+                    setSearchResults(filteredData);
+
+                } catch (err) {
+                    setError('เกิดข้อผิดพลาดในการค้นหา: ' + err.message);
+                    setSearchResults([]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Get current data based on active tab and search
+            const currentData = () => {
+                let data;
+
+                if (searchResults !== null) {
+                    data = searchResults;
+                } else {
+                    switch (activeTab) {
+                        case 'top-spender':
+                            data = topSpenderData;
+                            break;
+                        case 'vdo-call':
+                            data = vdoCallData;
+                            break;
+                        case 'registered':
+                            data = registeredUsersData;
+                            break;
+                        case 'all':
+                        default:
+                            data = allData;
+                    }
+                }
+
+                // Apply registered filter if enabled (only for top-spender and all tabs)
+                if (filterRegistered && (activeTab === 'top-spender' || activeTab === 'all')) {
+                    data = data.filter(item => item.สถานะลงทะเบียน === true);
+                }
+
+                return data;
+            };
+
+            const displayData = currentData();
+
+            return (
+                <div className="min-h-screen">
+                    {/* Header */}
+                    <div className="header-gradient text-white p-4 sm:p-6 shadow-lg">
+                        <div className="max-w-full mx-auto px-2">
+                            {/* Back to Home */}
+                            <div className="flex justify-between items-center mb-2">
+                                <a href="/" className="text-xs sm:text-sm text-yellow-200 hover:text-white transition-colors underline">
+                                    ← กลับหน้าหลัก
+                                </a>
+                                <div className="text-xs sm:text-sm text-yellow-200">
+                                    ⚙️ Admin Dashboard
+                                </div>
+                            </div>
+                            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-2">Admin Dashboard - POOHPAVEL 29 NOV 2025</h1>
+                            <p className="text-center text-red-100 text-xs sm:text-sm md:text-base">ระบบจัดการข้อมูลสิทธิ์ Top Spender และ VDO Call</p>
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="max-w-full mx-auto p-2 sm:p-4 md:p-6">
+                        {/* Statistics Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-6">
+                            <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg shadow-md p-3 sm:p-4">
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <p className="text-xs sm:text-sm mb-1">Top Spender</p>
+                                    <p className="text-xl sm:text-2xl md:text-3xl font-bold">{topSpenderData.length}</p>
+                                    <p className="text-xs text-yellow-100">ท่านที่มีสิทธิ์</p>
+                                </div>
+                            </div>
+                            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-md p-3 sm:p-4">
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <p className="text-xs sm:text-sm mb-1">VDO Call</p>
+                                    <p className="text-xl sm:text-2xl md:text-3xl font-bold">{vdoCallData.length}</p>
+                                    <p className="text-xs text-blue-100">ท่านที่มีสิทธิ์</p>
+                                </div>
+                            </div>
+                            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow-md p-3 sm:p-4">
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <p className="text-xs sm:text-sm mb-1">ลงทะเบียนแล้ว</p>
+                                    <p className="text-xl sm:text-2xl md:text-3xl font-bold">
+                                        {allData.filter(item => item.สถานะลงทะเบียน === true).length}
+                                    </p>
+                                    <p className="text-xs text-green-100">ท่านที่ลงทะเบียน</p>
+                                </div>
+                            </div>
+                            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg shadow-md p-3 sm:p-4">
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <p className="text-xs sm:text-sm mb-1">รวมทั้งหมด</p>
+                                    <p className="text-xl sm:text-2xl md:text-3xl font-bold">{allData.length}</p>
+                                    <p className="text-xs text-purple-100">รายการทั้งหมด</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Search Section - Sticky */}
+                        <div className="sticky-search-container">
+                            <div className="sticky-search-wrapper">
+                                <div className="bg-white rounded-lg shadow-md p-3 sm:p-4 mb-6">
+                                    <div className="search-inline">
+                                        <div className="flex-1">
+                                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                                                🔍 ค้นหาด้วยชื่อ นามสกุล เบอร์โทรศัพท์ หรืออีเมล
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={searchPhone}
+                                                onChange={(e) => setSearchPhone(e.target.value)}
+                                                placeholder="กรอกชื่อ นามสกุล เบอร์โทรศัพท์ หรืออีเมล"
+                                                className="search-input w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus-green text-sm"
+                                                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={handleSearch}
+                                            disabled={loading}
+                                            className={`btn-green px-4 py-2 sm:px-6 rounded-lg transition-colors text-xs sm:text-sm disabled:bg-gray-400`}
+                                        >
+                                            {loading ? 'ค้นหา...' : 'ค้นหา'}
+                                        </button>
+                                        {searchPhone && (
+                                            <button
+                                                onClick={() => {
+                                                    setSearchPhone('');
+                                                    setSearchResults(null);
+                                                }}
+                                                className="btn-gray px-3 py-2 sm:px-4 rounded-lg transition-colors text-xs sm:text-sm"
+                                            >
+                                                ล้าง
+                                            </button>
+                                        )}
+                                        {/* Filter for registered users - only show for top-spender and all tabs */}
+                                        {(activeTab === 'top-spender' || activeTab === 'all') && (
+                                            <button
+                                                onClick={() => setFilterRegistered(!filterRegistered)}
+                                                className={`px-3 py-2 sm:px-4 rounded-lg transition-colors text-xs sm:text-sm ${
+                                                    filterRegistered
+                                                        ? 'bg-green-500 text-white hover:bg-green-600'
+                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                }`}
+                                            >
+                                                {filterRegistered ? '✅ ลงทะเบียนแล้ว' : '📋 ทั้งหมด'}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                            <div className="flex border-b">
+                                <button
+                                    onClick={() => {
+                                        setActiveTab('all');
+                                        setSearchPhone('');
+                                        setSearchResults(null);
+                                        setFilterRegistered(false);
+                                    }}
+                                    className={`flex-1 px-2 sm:px-3 md:px-4 py-3 sm:py-4 font-semibold transition-colors text-xs sm:text-sm md:text-base ${
+                                    activeTab === 'all'
+                                        ? 'tab-active'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                                >
+                                    📊 ทั้งหมด
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setActiveTab('top-spender');
+                                        setSearchPhone('');
+                                        setSearchResults(null);
+                                        setFilterRegistered(false);
+                                    }}
+                                    className={`flex-1 px-2 sm:px-3 md:px-4 py-3 sm:py-4 font-semibold transition-colors text-xs sm:text-sm md:text-base ${
+                                    activeTab === 'top-spender'
+                                        ? 'tab-active'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                                >
+                                    🎁 Top Spender
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setActiveTab('vdo-call');
+                                        setSearchPhone('');
+                                        setSearchResults(null);
+                                        setFilterRegistered(false);
+                                    }}
+                                    className={`flex-1 px-2 sm:px-3 md:px-4 py-3 sm:py-4 font-semibold transition-colors text-xs sm:text-sm md:text-base ${
+                                    activeTab === 'vdo-call'
+                                        ? 'tab-active'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                                >
+                                    📹 VDO Call
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setActiveTab('registered');
+                                        setSearchPhone('');
+                                        setSearchResults(null);
+                                        setFilterRegistered(false);
+                                    }}
+                                    className={`flex-1 px-2 sm:px-3 md:px-4 py-3 sm:py-4 font-semibold transition-colors text-xs sm:text-sm md:text-base ${
+                                    activeTab === 'registered'
+                                        ? 'tab-active'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                                >
+                                    ✅ รายชื่อที่ลงทะเบียน
+                                </button>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-3 sm:p-4 md:p-6">
+                                {loading ? (
+                                    <div className="text-center py-8">
+                                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                                        <p className="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p>
+                                    </div>
+                                ) : error ? (
+                                    <div className="text-center py-8">
+                                        <div className="text-red-600 text-lg mb-2">⚠️ {error}</div>
+                                        <button
+                                            onClick={fetchData}
+                                            className="btn-red px-4 py-2 rounded hover:bg-red-700"
+                                        >
+                                            ลองใหม่
+                                        </button>
+                                    </div>
+                                ) : displayData.length === 0 ? (
+                                    <div className="text-center py-12 text-gray-500">
+                                        <div className="text-6xl mb-4">📋</div>
+                                        <p className="text-xl font-medium mb-2">
+                                            {searchPhone ? 'ไม่พบข้อมูลที่ค้นหา' : 'ยังไม่มีข้อมูลลูกค้า'}
+                                        </p>
+                                        <p className="text-sm">
+                                            {searchPhone
+                                                ? 'กรุณาตรวจสอบข้อมูลที่ค้นหาอีกครั้ง'
+                                                : 'กรุณาเพิ่มข้อมูลลูกค้าใน Google Sheets'
+                                            }
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="responsive-table-wrapper">
+                                        <table className="w-full table-auto admin-table">
+                                            <thead>
+                                                <tr className="bg-red-50 border-b-2 border-red-200">
+                                                    <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">ลำดับ</th>
+                                                    <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">ชื่อ-นามสกุล</th>
+                                                    <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">เบอร์โทร</th>
+                                                    {(activeTab === 'all' || activeTab === 'registered') && (
+                                                        <>
+                                                            <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">อีเมล</th>
+                                                            <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">ประเภท</th>
+                                                            <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">สถานะลงทะเบียน</th>
+                                                        </>
+                                                    )}
+                                                    <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">
+                                                        {activeTab === 'top-spender' || activeTab === 'all' || activeTab === 'registered' ? 'สิทธิ์ TopSpender' : ''}
+                                                        {activeTab === 'vdo-call' || activeTab === 'all' || activeTab === 'registered' ? 'สิทธิ์ VDO Call' : ''}
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {displayData.map((item, index) => (
+                                                    <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
+                                                        <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-900">
+                                                            {item.ลำดับ || index + 1}
+                                                        </td>
+                                                        <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-900 font-medium">
+                                                            {maskName(item.ชื่อ)} {maskName(item.นามสกุล)}
+                                                        </td>
+                                                        <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-900">
+                                                            {maskPhone(item.เบอรโทร)}
+                                                        </td>
+                                                        {(activeTab === 'all' || activeTab === 'registered') && (
+                                                            <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-900">
+                                                                {maskEmail(item.อีเมล)}
+                                                            </td>
+                                                        )}
+                                                        {(activeTab === 'all' || activeTab === 'registered') && (
+                                                            <>
+                                                                <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm">
+                                                                    <span className={`px-2 py-1 rounded-full text-white font-semibold text-xs ${
+                                                                        item.ประเภท === 'Top Spender' ? 'badge-yellow' : 'badge-blue'
+                                                                    }`}>
+                                                                        {item.ประเภท}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm">
+                                                                    {activeTab === 'registered' ? (
+                                                                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                                                            ✅ ลงทะเบียนแล้ว
+                                                                        </span>
+                                                                    ) : (
+                                                                        item.ประเภท === 'Top Spender' ? (
+                                                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                                                                item.สถานะลงทะเบียน
+                                                                                    ? 'bg-green-100 text-green-800'
+                                                                                    : 'bg-red-100 text-red-800'
+                                                                            }`}>
+                                                                                {item.สถานะลงทะเบียน ? '✅ ลงทะเบียนแล้ว' : '❌ ยังไม่ลงทะเบียน'}
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="px-2 py-1 text-gray-400 text-xs">-</span>
+                                                                        )
+                                                                    )}
+                                                                </td>
+                                                            </>
+                                                        )}
+                                                            <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm">
+                                                            <div className="flex flex-col sm:flex-row gap-1">
+                                                                {(activeTab === 'top-spender' || activeTab === 'all' || activeTab === 'registered') && (
+                                                                    <span className="px-2 py-1 rounded-full text-white font-semibold text-xs badge-yellow">
+                                                                        {item.สิทธิ_TopSpender || 0}
+                                                                    </span>
+                                                                )}
+                                                                {(activeTab === 'vdo-call' || activeTab === 'all' || activeTab === 'registered') && (
+                                                                    <span className="px-2 py-1 rounded-full text-white font-semibold text-xs badge-blue">
+                                                                        {item.สิทธิ_VDO_Call || 0}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                        <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600 text-center">
+                                            รวมทั้งหมด {displayData.length} รายการ
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="mt-6 sm:mt-8 text-center text-gray-500 text-xs sm:text-sm">
+                            <p>⚙️ Admin Dashboard - POOHPAVEL 2568</p>
+                            <p>พัฒนาด้วย ❤️ สำหรับทีมงาน</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Check authentication (simple check for now)
+        const isAuthenticated = localStorage.getItem('adminAuthenticated') === 'true';
+
+        // Login Form Component
+        function LoginForm() {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+
+                // Simple authentication (replace with more secure method in production)
+                setTimeout(() => {
+                    if (username === 'admin' && password === 'poohpavel2568') {
+                        localStorage.setItem('adminAuthenticated', 'true');
+                        window.location.reload();
+                    } else {
+                        setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+                    }
+                    setLoading(false);
+                }, 1000);
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                    <div className="max-w-md w-full space-y-8 p-8">
+                        <div>
+                            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-red-100">
+                                <span className="text-red-600 text-2xl">⚙️</span>
+                            </div>
+                            <h2 className="mt-6 text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
+                                Admin Login
+                            </h2>
+                            <p className="mt-2 text-center text-sm text-gray-600">
+                                POOHPAVEL 29 NOV 2025 Dashboard
+                            </p>
+                        </div>
+                        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded text-sm">
+                                    {error}
+                                </div>
+                            )}
+                            <div className="space-y-4">
+                                <div>
+                                    <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                                        ชื่อผู้ใช้
+                                    </label>
+                                    <input
+                                        id="username"
+                                        name="username"
+                                        type="text"
+                                        required
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                                        placeholder="กรอกชื่อผู้ใช้"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                        รหัสผ่าน
+                                    </label>
+                                    <input
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        required
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                                        placeholder="กรอกรหัสผ่าน"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white ${
+                                        loading ? 'bg-gray-400' : 'bg-red-600 hover:bg-red-700'
+                                    } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors`}
+                                >
+                                    {loading ? (
+                                        <div className="flex items-center">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            กำลังเข้าสู่ระบบ...
+                                        </div>
+                                    ) : (
+                                        'เข้าสู่ระบบ'
+                                    )}
+                                </button>
+                            </div>
+
+                            <div className="text-center">
+                                <a href="/" className="text-sm text-red-600 hover:text-red-500 underline">
+                                    กลับหน้าหลัก
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // Main App Component
+        function App() {
+            const [currentPage, setCurrentPage] = useState('checking');
+
+            useEffect(() => {
+                // Check current path
+                const path = window.location.pathname;
+                if (path === '/admin') {
+                    setCurrentPage('login');
+                } else {
+                    setCurrentPage('main');
+                }
+            }, []);
+
+            // If on /admin path
+            if (currentPage === 'login') {
+                return isAuthenticated ? <AdminDashboard /> : <LoginForm />;
+            }
+
+            // If on main path
+            return <AdminDashboard />;
+        }
+
+        // Render the app
+        ReactDOM.render(<App />, document.getElementById('root'));
+
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
