@@ -32,19 +32,71 @@ export const normalizeThaiText = (text) => {
     .trim();
 };
 
+// Client-side Thai text normalization (alias for normalizeThaiText)
+export const normalizeThaiTextClient = normalizeThaiText;
+
+// Phone number normalization for flexible search
+export const normalizePhoneNumber = (phone) => {
+  if (!phone) return '';
+
+  // Remove all non-digit characters
+  const digits = phone.replace(/[^0-9]/g, '');
+
+  // Remove leading zero for comparison (e.g., "0623130923" becomes "623130923")
+  const withoutLeadingZero = digits.replace(/^0+/, '');
+
+  return {
+    original: digits,
+    normalized: withoutLeadingZero,
+    withLeadingZero: digits.startsWith('0') ? digits : `0${digits}`
+  };
+};
+
+// Check if two phone numbers match (flexible matching)
+export const phonesMatch = (searchPhone, customerPhone) => {
+  if (!searchPhone || !customerPhone) return false;
+
+  const search = normalizePhoneNumber(searchPhone);
+  const customer = normalizePhoneNumber(customerPhone);
+
+  // Exact match
+  if (search.original === customer.original) return true;
+
+  // Match with/without leading zero
+  if (search.normalized === customer.normalized) return true;
+  if (search.original === customer.normalized) return true;
+  if (search.normalized === customer.original) return true;
+
+  // Partial match (at least 4 digits)
+  if (search.original.length >= 4) {
+    if (customer.original.includes(search.original)) return true;
+    if (customer.normalized.includes(search.original)) return true;
+  }
+
+  if (search.normalized.length >= 4) {
+    if (customer.original.includes(search.normalized)) return true;
+    if (customer.normalized.includes(search.normalized)) return true;
+  }
+
+  return false;
+};
+
 // Calculate match score for search results
 export const calculateMatchScore = (searchTerm, customer) => {
   const normalizedSearch = normalizeThaiText(searchTerm);
-  const cleanPhone = searchTerm.replace(/[^0-9]/g, '');
   let score = 0;
 
-  // Phone number matching
-  if (cleanPhone && customer.เบอรโทร) {
-    const customerPhone = customer.เบอรโทร.replace(/[^0-9]/g, '');
-    if (customerPhone === cleanPhone) {
-      score += 10; // Exact phone match
-    } else if (customerPhone.includes(cleanPhone) && cleanPhone.length >= 4) {
-      score += 5; // Partial phone match
+  // Phone number matching with flexible matching
+  if (customer.เบอรโทร) {
+    if (phonesMatch(searchTerm, customer.เบอรโทร)) {
+      const search = normalizePhoneNumber(searchTerm);
+      const customer = normalizePhoneNumber(customer.เบอรโทร);
+
+      if (search.original === customer.original || search.normalized === customer.normalized) {
+        score += 15; // Exact or normalized exact match
+      } else if (search.original.length >= 4 || search.normalized.length >= 4) {
+        score += 8; // Partial match
+      }
     }
   }
 

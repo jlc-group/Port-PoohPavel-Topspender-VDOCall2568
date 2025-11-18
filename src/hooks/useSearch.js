@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { searchCustomers } from '@utils/api';
-import { calculateMatchScore, normalizeThaiTextClient } from '@utils/dataMasking';
+import { calculateMatchScore, normalizeThaiTextClient, phonesMatch, normalizePhoneNumber } from '@utils/dataMasking';
 import { LOADING_STATES, ERROR_MESSAGES, TAB_TYPES } from '@utils/constants';
 
 export const useSearch = (topSpenderData, vdoCallData) => {
@@ -27,16 +27,17 @@ export const useSearch = (topSpenderData, vdoCallData) => {
   // Client-side match scoring (for offline search)
   const calculateClientMatchScore = (searchTerm, item) => {
     const normalizedSearch = normalizeThaiTextClient(searchTerm);
-    const cleanPhone = searchTerm.replace(/[^0-9]/g, '');
     let score = 0;
 
-    // Phone number matching
-    if (cleanPhone && item.เบอรโทร) {
-      const customerPhone = item.เบอรโทร.replace(/[^0-9]/g, '');
-      if (customerPhone === cleanPhone) {
-        score += 10;
-      } else if (customerPhone.includes(cleanPhone) && cleanPhone.length >= 4) {
-        score += 5;
+    // Phone number matching with flexible matching
+    if (item.เบอรโทร && phonesMatch(searchTerm, item.เบอรโทร)) {
+      const search = normalizePhoneNumber(searchTerm);
+      const customer = normalizePhoneNumber(item.เบอรโทร);
+
+      if (search.original === customer.original || search.normalized === customer.normalized) {
+        score += 15; // Exact or normalized exact match
+      } else if (search.original.length >= 4 || search.normalized.length >= 4) {
+        score += 8; // Partial match
       }
     }
 

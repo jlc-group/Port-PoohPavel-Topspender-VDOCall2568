@@ -101,3 +101,6 @@ Desktop.ini
 
 # macOS
 .DS_Store
+
+# YoYo AI version control directory
+.yoyo/
