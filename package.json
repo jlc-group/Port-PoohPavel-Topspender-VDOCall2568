@@ -1,11 +1,16 @@
 {
-  "name": "lucky-draw-customer-portal",
+  "name": "poohpavel-lucky-draw",
   "version": "1.0.0",
   "description": "ระบบ Lucky Draw สำหรับลูกค้าดูสิทธิ์ Top Spender และ VDO Call",
   "main": "server.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "start": "set PORT=3005 && node server.js",
+    "dev": "set PORT=3005 && nodemon server.js",
+    "dev:frontend": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && npx wrangler pages deploy dist",
     "test": "node google-sheets-example.js",
     "install-deps": "npm install"
   },
@@ -14,12 +19,27 @@
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.8.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "@vitejs/plugin-react": "^4.0.0",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.21",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^4.9.3",
+    "vite": "^5.0.0",
+    "wrangler": "^3.0.0"
   },
-  "keywords": ["google-sheets", "api", "data", "lucky-draw", "react", "thai"],
+  "keywords": ["google-sheets", "api", "data", "lucky-draw", "react", "thai", "cloudflare"],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

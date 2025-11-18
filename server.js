@@ -1,10 +1,12 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Import Google Sheets functionality
-const {
+import {
   getSheetData,
   searchCustomerByPhone,
   getCustomerRights,
@@ -13,10 +15,14 @@ const {
   getRegisteredTopSpenderData,
   searchTopSpenderByPhone,
   searchVDOCallByPhone
-} = require('./google-sheets-example');
+} from './google-sheets-example.js';
+
+// Fix __dirname in ES module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.PORT || 3005;
 
 // Middleware
 app.use(cors());
@@ -327,6 +333,47 @@ app.get('/api/vdo-call/search/:searchTerm', async (req, res) => {
   }
 });
 
+// Combined search across both Top Spender and VDO Call datasets
+app.get('/api/combined-search/:searchTerm', async (req, res) => {
+  try {
+    const { searchTerm } = req.params;
+
+    // Search in both datasets simultaneously
+    const [topSpenderResult, vdoCallResult] = await Promise.all([
+      searchTopSpenderByPhone(searchTerm),
+      searchVDOCallByPhone(searchTerm)
+    ]);
+
+    const results = {
+      topSpender: topSpenderResult,
+      vdoCall: vdoCallResult
+    };
+
+    // Check if we found any results
+    const hasResults = topSpenderResult || vdoCallResult;
+
+    if (!hasResults) {
+      return res.status(404).json({
+        success: false,
+        error: 'ไม่พบข้อมูล',
+        message: 'กรุณาตรวจสอบชื่อ นามสกุล หรือเบอร์โทรศัพท์อีกครั้ง'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: results
+    });
+
+  } catch (error) {
+    console.error('Error in combined search:', error);
+    res.status(500).json({
+      success: false,
+      error: 'เกิดข้อผิดพลาดในการค้นหา'
+    });
+  }
+});
+
 // Helper function to mask phone number
 function maskPhone(phone) {
   if (!phone) return '-';
@@ -361,4 +408,4 @@ app.listen(PORT, () => {
   `);
 });
 
-module.exports = app;
+export default app;

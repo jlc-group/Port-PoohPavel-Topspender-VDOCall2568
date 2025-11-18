@@ -217,6 +217,8 @@
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState('');
             const [searchResults, setSearchResults] = useState(null);
+            const [isCombinedSearch, setIsCombinedSearch] = useState(false);
+            const [dynamicHeaderTitle, setDynamicHeaderTitle] = useState(null);
 
             // Statistics and countdown states
             const [countdown, setCountdown] = useState({
@@ -228,7 +230,7 @@
 
             // API base URL
             const API_BASE = window.location.origin === 'http://localhost:3003'
-                ? 'http://localhost:3003'
+                ? 'http://localhost:3005' // Backend API server on port 3005
                 : '';
 
             // Data masking functions
@@ -318,6 +320,8 @@
             const handleSearch = async () => {
                 if (!searchPhone.trim()) {
                     setSearchResults(null);
+                    setIsCombinedSearch(false);
+                    setDynamicHeaderTitle(null);
                     return;
                 }
 
@@ -325,26 +329,53 @@
                 setError('');
 
                 try {
-                    let endpoint = '';
-                    if (activeTab === 'top-spender') {
-                        endpoint = `${API_BASE}/api/top-spender/search/${searchPhone}`;
-                    } else {
-                        endpoint = `${API_BASE}/api/vdo-call/search/${searchPhone}`;
-                    }
+                    // Use combined search endpoint to search across both systems
+                    const endpoint = `${API_BASE}/api/combined-search/${searchPhone}`;
 
                     const response = await fetch(endpoint);
                     const result = await response.json();
 
                     if (result.success) {
-                        setSearchResults(result.data ? [result.data] : []);
+                        // Handle combined search results
+                        const combinedResults = [];
+                        if (result.data.topSpender) {
+                            combinedResults.push({ ...result.data.topSpender, type: 'top-spender' });
+                        }
+                        if (result.data.vdoCall) {
+                            combinedResults.push({ ...result.data.vdoCall, type: 'vdo-call' });
+                        }
+
+                        // Smart tab switching logic
+                        const hasTopSpender = combinedResults.some(item => item.type === 'top-spender');
+                        const hasVDOCall = combinedResults.some(item => item.type === 'vdo-call');
+
+                        if (hasTopSpender && !hasVDOCall) {
+                            // Only Top Spender results found
+                            setActiveTab('top-spender');
+                            setDynamicHeaderTitle('สิทธิ์ TopSpender');
+                        } else if (hasVDOCall && !hasTopSpender) {
+                            // Only VDO Call results found
+                            setActiveTab('vdo-call');
+                            setDynamicHeaderTitle('สิทธิ์ VDO Call');
+                        } else if (hasTopSpender && hasVDOCall) {
+                            // Results found in both systems
+                            setDynamicHeaderTitle('สิทธิ์ TopSpender สิทธิ์ VDO Call');
+                        }
+
+                        setSearchResults(combinedResults.length > 0 ? combinedResults : []);
+                        setIsCombinedSearch(true);
                     } else {
                         setSearchResults([]);
+                        setIsCombinedSearch(false);
+                        setDynamicHeaderTitle(null);
                         setError(result.error || 'ไม่พบข้อมูล');
                     }
 
                 } catch (err) {
                     setError('เกิดข้อผิดพลาดในการค้นหา: ' + err.message);
                     setSearchResults([]);
+                    setIsCombinedSearch(false);
+                    setDynamicHeaderTitle(null);
                 } finally {
                     setLoading(false);
                 }
@@ -423,7 +454,7 @@
                     <div className="header-gradient text-white p-4 sm:p-6 shadow-lg">
                         <div className="max-w-full mx-auto px-2">
                               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-2">JULA'S HERB ACNE LAB SERIES "ONE DAY TRIP WITH POOHPAVEL" 29 NOV 2025</h1>
-                            <p className="text-center text-green-100 text-xs sm:text-sm md:text-base mb-1">ระบบตรวจสอบสิทธิ์ Top Spender และ VDO Call</p>
+                            <p className="text-center text-green-100 text-xs sm:text-sm md:text-base mb-1">ตรวจสอบสิทธิ์ Top Spender และ VDO Call</p>
                             <p className="text-center text-yellow-200 text-xs sm:text-xs md:text-sm mb-3 font-medium">สิทธิ์ตั้งแต่วันที่ 12 พ.ย. 2568 เวลา 18.00.00 น. ถึง 25 พ.ย. 2568 เวลา 23.59.59 น.</p>
 
                             {/* Campaign Image */}
@@ -437,67 +468,46 @@
 
                     {/* Main Content */}
                     <div className="max-w-full mx-auto p-2 sm:p-4 md:p-6">
-                        {/* Statistics Cards */}
-                        <div className="flex flex-row gap-2 mb-6 justify-between">
-                            <div className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow-md p-3 sm:p-4">
-                                <div className="flex flex-col items-center justify-center text-center">
-                                    <p className="text-xs sm:text-sm mb-1">Top Spender</p>
-                                    <p className="text-xl sm:text-2xl md:text-3xl font-bold">{topSpenderData.length}</p>
-                                    <p className="text-xs text-green-100">ท่านที่มีสิทธิ์</p>
-                                </div>
-                            </div>
-                            <div className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg shadow-md p-3 sm:p-4">
-                                <div className="flex flex-col items-center justify-center text-center">
-                                    <p className="text-xs sm:text-sm mb-1">VDO Call</p>
-                                    <p className="text-xl sm:text-2xl md:text-3xl font-bold">{vdoCallData.length}</p>
-                                    <p className="text-xs text-green-100">ท่านที่มีสิทธิ์</p>
-                                </div>
-                            </div>
-                            <div className="flex-1 bg-gradient-to-r from-green-700 to-green-800 text-white rounded-lg shadow-md p-3 sm:p-4">
-                                <div className="flex flex-col items-center justify-center text-center">
-                                    <p className="text-xs sm:text-sm mb-1">รวมทั้งหมด</p>
-                                    <p className="text-xl sm:text-2xl md:text-3xl font-bold">{topSpenderData.length + vdoCallData.length}</p>
-                                    <p className="text-xs text-green-100">ท่านที่มีสิทธิ์</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Countdown Timer */}
+                        
+                        {/* Countdown Timer and Last Update */}
                         <div className="mb-6">
-                            <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow-md p-3 sm:p-4">
-                                {/* Header */}
-                                <div className="text-center mb-2 sm:mb-4">
-                                    <p className="text-sm sm:text-base md:text-lg font-bold">นับเวลาถอยหลัง</p>
+                            <div className="flex flex-col md:flex-row gap-4">
+                                {/* Countdown Timer */}
+                                <div className="flex-1 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow-md p-3 sm:p-4">
+                                    {/* Header */}
+                                    <div className="text-center mb-2 sm:mb-3">
+                                        <p className="text-sm sm:text-base md:text-lg font-bold">นับเวลาถอยหลัง</p>
+                                    </div>
+
+                                    {/* Time display */}
+                                    <div className="flex justify-center items-center space-x-2 sm:space-x-4 md:space-x-6 countdown-timer">
+                                        <div className="text-center flex-1">
+                                            <p className="text-lg sm:text-xl md:text-2xl font-bold">{countdown.days}</p>
+                                            <p className="text-xs">วัน</p>
+                                        </div>
+                                        <div className="text-center flex-1">
+                                            <p className="text-lg sm:text-xl md:text-2xl font-bold">{String(countdown.hours).padStart(2, '0')}</p>
+                                            <p className="text-xs">ชั่วโมง</p>
+                                        </div>
+                                        <div className="text-center flex-1">
+                                            <p className="text-lg sm:text-xl md:text-2xl font-bold">{String(countdown.minutes).padStart(2, '0')}</p>
+                                            <p className="text-xs">นาที</p>
+                                        </div>
+                                        <div className="text-center flex-1">
+                                            <p className="text-lg sm:text-xl md:text-2xl font-bold">{String(countdown.seconds).padStart(2, '0')}</p>
+                                            <p className="text-xs">วินาที</p>
+                                        </div>
+                                    </div>
+
+                                    <p className="text-xs mt-2 sm:mt-3 text-center text-yellow-200">(25 พ.ย. 2568 23:59:59)</p>
                                 </div>
 
-                                {/* Time display */}
-                                <div className="flex justify-center items-center space-x-2 sm:space-x-4 md:space-x-6 countdown-timer">
-                                    <div className="text-center flex-1">
-                                        <p className="text-lg sm:text-xl md:text-2xl font-bold">{countdown.days}</p>
-                                        <p className="text-xs">วัน</p>
+                                {/* Last Update Box */}
+                                <div className="md:w-80 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg shadow-md p-3 sm:p-4">
+                                    <div className="text-center">
+                                        <p className="text-xs sm:text-sm font-bold mb-1">อัปเดตล่าสุด</p>
+                                        <p className="text-xs sm:text-sm">14 พ.ย. 68 23.59 น.</p>
                                     </div>
-                                    <div className="text-center flex-1">
-                                        <p className="text-lg sm:text-xl md:text-2xl font-bold">{String(countdown.hours).padStart(2, '0')}</p>
-                                        <p className="text-xs">ชั่วโมง</p>
-                                    </div>
-                                    <div className="text-center flex-1">
-                                        <p className="text-lg sm:text-xl md:text-2xl font-bold">{String(countdown.minutes).padStart(2, '0')}</p>
-                                        <p className="text-xs">นาที</p>
-                                    </div>
-                                    <div className="text-center flex-1">
-                                        <p className="text-lg sm:text-xl md:text-2xl font-bold">{String(countdown.seconds).padStart(2, '0')}</p>
-                                        <p className="text-xs">วินาที</p>
-                                    </div>
-                                </div>
-
-                                <p className="text-xs mt-2 sm:mt-3 text-center text-yellow-200">(25 พ.ย. 2568 23:59:59)</p>
-                            </div>
-
-                            {/* Last Update Box */}
-                            <div className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg shadow-md p-3 sm:p-4 mt-4">
-                                <div className="text-center">
-                                    <p className="text-xs sm:text-sm font-bold mb-1">⏰ อัปเดตล่าสุด</p>
-                                    <p className="text-xs sm:text-sm">สิทธิ์ตั้งแต่วันที่ 12 พ.ย. 2568 เวลา 18.00.00 น. ถึง 14 พ.ย. 2568 เวลา 23.59.59 น.</p>
                                 </div>
                             </div>
                         </div>
@@ -535,6 +545,8 @@
                                                 onClick={() => {
                                                     setSearchPhone('');
                                                     setSearchResults(null);
+                                                    setIsCombinedSearch(false);
+                                                    setDynamicHeaderTitle(null);
                                                 }}
                                                 className="btn-gray px-3 py-2 sm:px-4 rounded-lg transition-colors text-xs sm:text-sm"
                                             >
@@ -561,6 +573,8 @@
                                         setActiveTab('top-spender');
                                         setSearchPhone('');
                                         setSearchResults(null);
+                                        setIsCombinedSearch(false);
+                                        setDynamicHeaderTitle(null);
                                     }}
                                     className={`flex-1 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-colors text-xs sm:text-sm md:text-base ${
                                         activeTab === 'top-spender'
@@ -575,6 +589,8 @@
                                         setActiveTab('vdo-call');
                                         setSearchPhone('');
                                         setSearchResults(null);
+                                        setIsCombinedSearch(false);
+                                        setDynamicHeaderTitle(null);
                                     }}
                                     className={`flex-1 px-2 sm:px-4 py-3 sm:py-4 font-semibold transition-colors text-xs sm:text-sm md:text-base ${
                                         activeTab === 'vdo-call'
@@ -625,7 +641,7 @@
                                                         <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">ลำดับ</th>
                                                         <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">ชื่อ-นามสกุล</th>
                                                         <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                                                            {activeTab === 'top-spender' ? 'สิทธิ์ TopSpender' : 'สิทธิ์ VDO Call'}
+                                                            {dynamicHeaderTitle || (activeTab === 'top-spender' ? 'สิทธิ์ TopSpender' : 'สิทธิ์ VDO Call')}
                                                         </th>
                                                     </tr>
                                                 </thead>
@@ -640,14 +656,14 @@
                                                             </td>
                                                             <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm">
                                                                 <span className={`px-2 py-1 rounded-full text-white font-semibold text-xs sm:text-sm ${
-                                                                    activeTab === 'top-spender'
-                                                                        ? 'badge-yellow'
-                                                                        : 'badge-blue'
+                                                                    isCombinedSearch
+                                                                        ? (item.type === 'top-spender' ? 'badge-yellow' : 'badge-blue')
+                                                                        : (activeTab === 'top-spender' ? 'badge-yellow' : 'badge-blue')
                                                                 }`}>
-                                                                    {activeTab === 'top-spender'
-                                                                        ? (item.สิทธิ_TopSpender || 0)
-                                                                        : (item.สิทธิ_VDO_Call || 0)
-                                                                    } สิทธิ์
+                                                                    {isCombinedSearch
+                                                                        ? ((item.type === 'top-spender' ? (item.สิทธิ_TopSpender || 0) : (item.สิทธิ_VDO_Call || 0)) + ' สิทธิ์')
+                                                                        : ((activeTab === 'top-spender' ? (item.สิทธิ_TopSpender || 0) : (item.สิทธิ_VDO_Call || 0)) + ' สิทธิ์')
+                                                                    }
                                                                 </span>
                                                             </td>
                                                         </tr>

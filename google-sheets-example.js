@@ -1,4 +1,4 @@
-const { GoogleSpreadsheet } = require('google-spreadsheet');
+import { GoogleSpreadsheet } from 'google-spreadsheet';
 
 // ตั้งค่า credentials จากไฟล์ JSON จริง
 const serviceAccount = {
@@ -379,7 +379,7 @@ async function getCustomerRights(customerId) {
   }
 }
 
-module.exports = {
+export {
   accessGoogleSheet,
   getSpecificRange,
   getSheetData,

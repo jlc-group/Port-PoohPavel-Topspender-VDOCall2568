@@ -24,11 +24,11 @@
             font-family: 'Sarabun', sans-serif;
         }
         .tab-active {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
             color: white;
         }
         .header-gradient {
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            background: linear-gradient(135deg, #16a34a 0%, #14532d 100%);
         }
         .search-input {
             font-size: 16px; /* Prevent zoom on iOS */
@@ -141,6 +141,7 @@
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState('');
             const [searchResults, setSearchResults] = useState(null);
+            const [isCombinedSearch, setIsCombinedSearch] = useState(false);
             const [filterRegistered, setFilterRegistered] = useState(false);
 
             // API base URL
@@ -251,6 +252,7 @@
             const handleSearch = async () => {
                 if (!searchPhone.trim()) {
                     setSearchResults(null);
+                    setIsCombinedSearch(false);
                     return;
                 }
 
@@ -258,34 +260,34 @@
                 setError('');
 
                 try {
-                    // For admin, search in combined data
-                    const filteredData = allData.filter(item => {
-                        const searchTerm = searchPhone.toLowerCase().trim();
-                        const cleanPhone = searchPhone.replace(/[^0-9]/g, '');
+                    // Use combined search endpoint to search across both systems (same as user page)
+                    const endpoint = `${API_BASE}/api/combined-search/${searchPhone}`;
 
-                        // Check phone number match
-                        if (item.เบอรโทร) {
-                            const customerPhone = item.เบอรโทร.replace(/[^0-9]/g, '');
-                            if (customerPhone.includes(cleanPhone) || cleanPhone.includes(customerPhone)) {
-                                return true;
-                            }
+                    const response = await fetch(endpoint);
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // Handle combined search results
+                        const combinedResults = [];
+                        if (result.data.topSpender) {
+                            combinedResults.push({ ...result.data.topSpender, type: 'top-spender' });
+                        }
+                        if (result.data.vdoCall) {
+                            combinedResults.push({ ...result.data.vdoCall, type: 'vdo-call' });
                         }
 
-                        // Check name match
-                        const fullName = `${item.ชื่อ} ${item.นามสกุล}`.toLowerCase();
-                        const firstName = item.ชื่อ.toLowerCase();
-                        const lastName = item.นามสกุล.toLowerCase();
-
-                        return fullName.includes(searchTerm) ||
-                               firstName.includes(searchTerm) ||
-                               lastName.includes(searchTerm);
-                    });
-
-                    setSearchResults(filteredData);
+                        setSearchResults(combinedResults.length > 0 ? combinedResults : []);
+                        setIsCombinedSearch(true);
+                    } else {
+                        setSearchResults([]);
+                        setIsCombinedSearch(false);
+                        setError(result.error || 'ไม่พบข้อมูล');
+                    }
 
                 } catch (err) {
                     setError('เกิดข้อผิดพลาดในการค้นหา: ' + err.message);
                     setSearchResults([]);
+                    setIsCombinedSearch(false);
                 } finally {
                     setLoading(false);
                 }
@@ -391,7 +393,10 @@
                                             <input
                                                 type="text"
                                                 value={searchPhone}
-                                                onChange={(e) => setSearchPhone(e.target.value)}
+                                                onChange={(e) => {
+                                                setSearchPhone(e.target.value);
+                                                setError(''); // Clear error when user starts typing
+                                            }}
                                                 placeholder="กรอกชื่อ นามสกุล เบอร์โทรศัพท์ หรืออีเมล"
                                                 className="search-input w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus-green text-sm"
                                                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -409,6 +414,7 @@
                                                 onClick={() => {
                                                     setSearchPhone('');
                                                     setSearchResults(null);
+                                                    setIsCombinedSearch(false);
                                                 }}
                                                 className="btn-gray px-3 py-2 sm:px-4 rounded-lg transition-colors text-xs sm:text-sm"
                                             >
