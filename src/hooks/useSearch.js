@@ -3,7 +3,7 @@ import { searchCustomers } from '@utils/api';
 import { calculateMatchScore, normalizeThaiTextClient, phonesMatch, normalizePhoneNumber } from '@utils/dataMasking';
 import { LOADING_STATES, ERROR_MESSAGES, TAB_TYPES } from '@utils/constants';
 
-export const useSearch = (topSpenderData, vdoCallData) => {
+export const useSearch = (topSpenderData, vdoCallData, registeredUsersData) => {
   const [searchPhone, setSearchPhone] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [isCombinedSearch, setIsCombinedSearch] = useState(false);
@@ -28,6 +28,14 @@ export const useSearch = (topSpenderData, vdoCallData) => {
   const calculateClientMatchScore = (searchTerm, item) => {
     const normalizedSearch = normalizeThaiTextClient(searchTerm);
     let score = 0;
+
+    // Email matching
+    if (item.อีเมล์) {
+      const email = normalizeThaiTextClient(item.อีเมล์);
+      if (email.includes(normalizedSearch) && normalizedSearch.length >= 2) {
+        score += 10;
+      }
+    }
 
     // Phone number matching with flexible matching
     if (item.เบอรโทร && phonesMatch(searchTerm, item.เบอรโทร)) {
@@ -154,7 +162,17 @@ export const useSearch = (topSpenderData, vdoCallData) => {
 
     // Only apply client-side filtering when not using server search results
     if (searchPhone.trim() && !isCombinedSearch) {
-      const allData = activeTab === TAB_TYPES.TOP_SPENDER ? topSpenderData : vdoCallData;
+      let allData;
+      if (activeTab === TAB_TYPES.TOP_SPENDER) {
+        allData = topSpenderData;
+      } else if (activeTab === TAB_TYPES.VDO_CALL) {
+        allData = vdoCallData;
+      } else if (activeTab === TAB_TYPES.REGISTERED_USERS) {
+        allData = registeredUsersData;
+      } else {
+        allData = [];
+      }
+
       return allData
         .map(item => ({ item, score: calculateClientMatchScore(searchPhone, item) }))
         .filter(match => match.score > 0)
@@ -162,8 +180,17 @@ export const useSearch = (topSpenderData, vdoCallData) => {
         .map(match => match.item);
     }
 
-    return activeTab === TAB_TYPES.TOP_SPENDER ? topSpenderData : vdoCallData;
-  }, [searchResults, isCombinedSearch, searchPhone, activeTab, topSpenderData, vdoCallData]);
+    // Return data based on active tab
+    if (activeTab === TAB_TYPES.TOP_SPENDER) {
+      return topSpenderData;
+    } else if (activeTab === TAB_TYPES.VDO_CALL) {
+      return vdoCallData;
+    } else if (activeTab === TAB_TYPES.REGISTERED_USERS) {
+      return registeredUsersData;
+    } else {
+      return [];
+    }
+  }, [searchResults, isCombinedSearch, searchPhone, activeTab, topSpenderData, vdoCallData, registeredUsersData]);
 
   return {
     // State

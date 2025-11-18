@@ -26,6 +26,7 @@ export const ADMIN_CREDENTIALS = {
 export const TAB_TYPES = {
   TOP_SPENDER: 'top-spender',
   VDO_CALL: 'vdo-call',
+  REGISTERED_USERS: 'registered-users',
 };
 
 // Search types

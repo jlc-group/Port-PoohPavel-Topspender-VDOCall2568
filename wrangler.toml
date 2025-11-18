@@ -1,5 +1,4 @@
 name = "poohpavel-lucky-draw"
-main = "src/main.jsx"
 compatibility_date = "2024-01-01"
 
 [env.production]
@@ -14,14 +13,23 @@ command = "npm run build"
 cwd = "."
 watch_dir = "src"
 
-# Static assets
+# Static assets for Pages
 [site]
 bucket = "./dist"
-entry-point = "workers-site"
 
 # Compatibility flags
 [compatibility_flags]
 nodejs_compat = true
+
+# Cloudflare Functions configuration
+[functions]
+# Directory that contains Cloudflare Functions
+directory = "./functions"
+
+# Environment variables for functions
+[functions.vars]
+SPREADSHEET_ID = "1PA4KRWqZFSeI8R88-8_S4ZhvayJBugHOZboevVo9cMg"
+SERVICE_ACCOUNT_EMAIL = "google-sheets-api-poohpavel@port-poohpavel2568.iam.gserviceaccount.com"
 
 # Limits and quotas
 [limits]

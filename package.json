@@ -11,8 +11,12 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build && npx wrangler pages deploy dist",
+    "deploy:prod": "npm run build && npx wrangler pages deploy dist --env production",
     "test": "node google-sheets-example.js",
-    "install-deps": "npm install"
+    "install-deps": "npm install",
+    "dev:local": "concurrently \"npm run dev\" \"npm run dev:frontend\"",
+    "wrangler:dev": "npx wrangler pages dev dist",
+    "functions:test": "node -e console.log('Testing Cloudflare Functions...')"
   },
   "dependencies": {
     "google-spreadsheet": "^3.3.0",
@@ -26,6 +30,7 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.1",
+    "concurrently": "^8.2.2",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^4.0.0",

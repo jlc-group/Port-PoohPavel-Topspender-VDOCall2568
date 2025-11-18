@@ -34,7 +34,7 @@ const AdminPage = () => {
     handleSearch,
     clearSearch,
     setActiveTab,
-  } = useSearch(topSpenderData, vdoCallData);
+  } = useSearch(topSpenderData, vdoCallData, registeredUsersData);
 
   // Check authentication on mount
   useEffect(() => {
@@ -156,7 +156,8 @@ const AdminPage = () => {
             loading={dataLoading || searchLoading}
             error={!dataLoading && !searchLoading ? (dataError || searchError) : null}
             showPhone={true}
-            showEmail={activeTab === 'registered-users'}
+            showEmail={true} // Show email on all tabs now
+            enhancedRanking={true} // Enable enhanced ranking display
           />
         </div>
 

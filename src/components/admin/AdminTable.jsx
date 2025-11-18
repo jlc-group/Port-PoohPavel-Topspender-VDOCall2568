@@ -1,5 +1,7 @@
 import React from 'react';
 import { TAB_TYPES } from '@utils/constants';
+import EmailDisplay from '@components/common/EmailDisplay';
+import RankingBadge, { Top44RankingBadge, VDOCallTop10Badge } from '@components/common/RankingBadge';
 
 const AdminTable = ({
   data = [],
@@ -8,7 +10,8 @@ const AdminTable = ({
   error = null,
   showPhone = true,
   showEmail = true,
-  className = ''
+  className = '',
+  enhancedRanking = false,
 }) => {
   if (loading) {
     return (
@@ -54,6 +57,9 @@ const AdminTable = ({
     if (activeTab === TAB_TYPES.VDO_CALL) {
       return item.สิทธิ_VDO_Call || 0;
     }
+    if (activeTab === TAB_TYPES.REGISTERED_USERS) {
+      return item.ประเภท || 'ไม่ระบุ';
+    }
     // If item has type property (from combined search), use that
     if (item.type === TAB_TYPES.TOP_SPENDER) {
       return item.สิทธิ_TopSpender || 0;
@@ -94,9 +100,9 @@ const AdminTable = ({
                 สิทธิ์ VDO Call
               </th>
             )}
-            {showPhone && (
+            {activeTab === TAB_TYPES.REGISTERED_USERS && (
               <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">
-                เบอร์โทรศัพท์
+                ประเภท
               </th>
             )}
             {showEmail && (
@@ -104,19 +110,51 @@ const AdminTable = ({
                 อีเมล
               </th>
             )}
-            <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">
-              วันที่ลงทะเบียน
-            </th>
+            {showPhone && (
+              <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">
+                เบอร์โทรศัพท์
+              </th>
+            )}
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {data.map((item, index) => (
-            <tr key={index} className="hover:bg-gray-50 transition-colors">
+            <tr
+              key={index}
+              className={`
+                hover:bg-gray-50 transition-colors
+                ${enhancedRanking && (activeTab === TAB_TYPES.TOP_SPENDER || activeTab === TAB_TYPES.VDO_CALL) ?
+                  (item.ลำดับ <= (activeTab === TAB_TYPES.TOP_SPENDER ? 44 : 10) ?
+                    'bg-gradient-to-r from-yellow-50 to-transparent' : '') : ''}
+              `}
+            >
               <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-900">
-                {item.ลำดับ || index + 1}
+                {enhancedRanking && (activeTab === TAB_TYPES.TOP_SPENDER || activeTab === TAB_TYPES.VDO_CALL) ? (
+                  <>
+                    {activeTab === TAB_TYPES.TOP_SPENDER && item.ลำดับ <= 44 && (
+                      <Top44RankingBadge rank={item.ลำดับ} />
+                    )}
+                    {activeTab === TAB_TYPES.VDO_CALL && item.ลำดับ <= 10 && (
+                      <VDOCallTop10Badge rank={item.ลำดับ} />
+                    )}
+                    {((activeTab === TAB_TYPES.TOP_SPENDER && item.ลำดับ > 44) ||
+                      (activeTab === TAB_TYPES.VDO_CALL && item.ลำดับ > 10) ||
+                      activeTab === TAB_TYPES.REGISTERED_USERS) && (
+                      <RankingBadge rank={item.ลำดับ} />
+                    )}
+                  </>
+                ) : (
+                  <RankingBadge rank={item.ลำดับ} size="sm" />
+                )}
               </td>
               <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-900 font-medium">
-                {item.ชื่อ} {item.นามสกุล}
+                <div className="flex items-center gap-2">
+                  <span>{item.ชื่อ} {item.นามสกุล}</span>
+                  {enhancedRanking && (activeTab === TAB_TYPES.TOP_SPENDER || activeTab === TAB_TYPES.VDO_CALL) &&
+                   item.ลำดับ <= (activeTab === TAB_TYPES.TOP_SPENDER ? 44 : 10) && (
+                    <span className="animate-pulse">✨</span>
+                  )}
+                </div>
               </td>
               {activeTab === TAB_TYPES.TOP_SPENDER && (
                 <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm">
@@ -132,19 +170,39 @@ const AdminTable = ({
                   </span>
                 </td>
               )}
+              {activeTab === TAB_TYPES.REGISTERED_USERS && (
+                <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm">
+                  {item.ประเภท === 'Top Spender' && (
+                    <span className="inline-flex px-2 py-1 rounded-full text-white font-semibold text-xs sm:text-sm badge-yellow">
+                      Top Spender
+                    </span>
+                  )}
+                  {item.ประเภท === 'VDO Call' && (
+                    <span className="inline-flex px-2 py-1 rounded-full text-white font-semibold text-xs sm:text-sm badge-blue">
+                      VDO Call
+                    </span>
+                  )}
+                  {!item.ประเภท && (
+                    <span className="inline-flex px-2 py-1 rounded-full text-white font-semibold text-xs sm:text-sm badge-gray">
+                      ไม่ระบุ
+                    </span>
+                  )}
+                </td>
+              )}
+              {showEmail && (
+                <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm">
+                  <EmailDisplay
+                    email={item.อีเมล์}
+                    size="sm"
+                    showAvatar={true}
+                  />
+                </td>
+              )}
               {showPhone && (
                 <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-500">
                   {item.เบอรโทร || '-'}
                 </td>
               )}
-              {showEmail && (
-                <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-500">
-                  {item.อีเมล || '-'}
-                </td>
-              )}
-              <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-500">
-                {formatDate(item.วันที่)}
-              </td>
             </tr>
           ))}
         </tbody>

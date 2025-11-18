@@ -18,6 +18,11 @@ const TabNavigation = ({
       label: '📹 VDO Call',
       icon: '📹',
     },
+    {
+      id: TAB_TYPES.REGISTERED_USERS,
+      label: '✅ รายชื่อที่ลงทะเบียน',
+      icon: '✅',
+    },
   ];
 
   return (

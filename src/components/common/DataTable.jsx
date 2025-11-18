@@ -1,6 +1,8 @@
 import React from 'react';
 import { maskName } from '@utils/dataMasking';
 import { TAB_TYPES } from '@utils/constants';
+import EmailDisplay from './EmailDisplay';
+import RankingBadge, { Top44RankingBadge, VDOCallTop10Badge } from './RankingBadge';
 
 const DataTable = ({
   data = [],
@@ -11,6 +13,8 @@ const DataTable = ({
   className = '',
   showIndex = true,
   emptyMessage = 'ไม่มีข้อมูล',
+  showEmail = false,
+  enhancedRanking = false,
 }) => {
   if (loading) {
     return (
@@ -53,6 +57,7 @@ const DataTable = ({
     if (dynamicHeaderTitle) return dynamicHeaderTitle;
     if (activeTab === TAB_TYPES.TOP_SPENDER) return 'สิทธิ์ TopSpender';
     if (activeTab === TAB_TYPES.VDO_CALL) return 'สิทธิ์ VDO Call';
+    if (activeTab === TAB_TYPES.REGISTERED_USERS) return 'ประเภท';
     return 'สิทธิ์';
   };
 
@@ -63,15 +68,23 @@ const DataTable = ({
     if (activeTab === TAB_TYPES.VDO_CALL) {
       return item.สิทธิ_VDO_Call || 0;
     }
+    if (activeTab === TAB_TYPES.REGISTERED_USERS) {
+      return item.ประเภท || 'ไม่ระบุ';
+    }
     return 0;
   };
 
   const getBadgeColor = (item) => {
-    if (item.type === TAB_TYPES.TOP_SPENDER) return 'badge-yellow';
-    if (item.type === TAB_TYPES.VDO_CALL) return 'badge-blue';
-
     if (activeTab === TAB_TYPES.TOP_SPENDER) return 'badge-yellow';
     if (activeTab === TAB_TYPES.VDO_CALL) return 'badge-blue';
+    if (activeTab === TAB_TYPES.REGISTERED_USERS) {
+      if (item.ประเภท === 'Top Spender') return 'badge-yellow';
+      if (item.ประเภท === 'VDO Call') return 'badge-blue';
+      return 'badge-gray';
+    }
+
+    if (item.type === TAB_TYPES.TOP_SPENDER) return 'badge-yellow';
+    if (item.type === TAB_TYPES.VDO_CALL) return 'badge-blue';
 
     return 'badge-gray';
   };
@@ -92,7 +105,12 @@ const DataTable = ({
             <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">
               {getHeaderText()}
             </th>
-            {item.เบอรโทร && (
+            {showEmail && (
+              <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">
+                อีเมล์
+              </th>
+            )}
+            {data.some(item => item.เบอรโทร) && (
               <th className="px-2 sm:px-3 md:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-gray-700">
                 เบอร์โทรศัพท์
               </th>
@@ -101,21 +119,66 @@ const DataTable = ({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {data.map((item, index) => (
-            <tr key={index} className="hover:bg-gray-50 transition-colors">
+            <tr
+              key={index}
+              className={`
+                hover:bg-gray-50 transition-colors
+                ${enhancedRanking && (activeTab === TAB_TYPES.TOP_SPENDER || activeTab === TAB_TYPES.VDO_CALL) ?
+                  (item.ลำดับ <= (activeTab === TAB_TYPES.TOP_SPENDER ? 44 : 10) ?
+                    'bg-gradient-to-r from-yellow-50 to-transparent' : '') : ''}
+              `}
+            >
               {showIndex && (
                 <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-900">
-                  {item.ลำดับ || index + 1}
+                  {enhancedRanking && (activeTab === TAB_TYPES.TOP_SPENDER || activeTab === TAB_TYPES.VDO_CALL) ? (
+                    <>
+                      {activeTab === TAB_TYPES.TOP_SPENDER && item.ลำดับ <= 44 && (
+                        <Top44RankingBadge rank={item.ลำดับ} />
+                      )}
+                      {activeTab === TAB_TYPES.VDO_CALL && item.ลำดับ <= 10 && (
+                        <VDOCallTop10Badge rank={item.ลำดับ} />
+                      )}
+                      {((activeTab === TAB_TYPES.TOP_SPENDER && item.ลำดับ > 44) ||
+                        (activeTab === TAB_TYPES.VDO_CALL && item.ลำดับ > 10) ||
+                        activeTab === TAB_TYPES.REGISTERED_USERS) && (
+                        <RankingBadge rank={item.ลำดับ} />
+                      )}
+                    </>
+                  ) : (
+                    <RankingBadge rank={item.ลำดับ} size="sm" />
+                  )}
                 </td>
               )}
               <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-900 font-medium">
-                {maskName(item.ชื่อ)} {maskName(item.นามสกุล)}
+                <div className="flex items-center gap-2">
+                  <span>{maskName(item.ชื่อ)} {maskName(item.นามสกุล)}</span>
+                  {enhancedRanking && (activeTab === TAB_TYPES.TOP_SPENDER || activeTab === TAB_TYPES.VDO_CALL) &&
+                   item.ลำดับ <= (activeTab === TAB_TYPES.TOP_SPENDER ? 44 : 10) && (
+                    <span className="animate-pulse">✨</span>
+                  )}
+                </div>
               </td>
               <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm">
-                <span className={`inline-flex px-2 py-1 rounded-full text-white font-semibold text-xs sm:text-sm ${getBadgeColor(item)}`}>
-                  {getRightsCount(item)} สิทธิ์
-                </span>
+                {activeTab === TAB_TYPES.REGISTERED_USERS ? (
+                  <span className={`inline-flex px-2 py-1 rounded-full text-white font-semibold text-xs sm:text-sm ${getBadgeColor(item)}`}>
+                    {getRightsCount(item)}
+                  </span>
+                ) : (
+                  <span className={`inline-flex px-2 py-1 rounded-full text-white font-semibold text-xs sm:text-sm ${getBadgeColor(item)}`}>
+                    {getRightsCount(item)} สิทธิ์
+                  </span>
+                )}
               </td>
-              {item.เบอรโทร && (
+              {showEmail && (
+                <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm">
+                  <EmailDisplay
+                    email={item.อีเมล์}
+                    size="sm"
+                    showAvatar={true}
+                  />
+                </td>
+              )}
+              {data.some(item => item.เบอรโทร) && (
                 <td className="px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm text-gray-500">
                   {item.เบอรโทร}
                 </td>
