@@ -61,6 +61,12 @@ export const apiRequest = async (endpoint, options = {}) => {
       throw new Error(errorMessage);
     }
 
+    // Validate successful response content-type is JSON to avoid parsing HTML
+    const okContentType = response.headers.get('content-type');
+    if (!okContentType || !okContentType.includes('application/json')) {
+      throw new Error(`Received non-JSON from API (content-type: ${okContentType || 'unknown'})`);
+    }
+
     return await response.json();
   } catch (error) {
     console.error('API request failed:', error);
