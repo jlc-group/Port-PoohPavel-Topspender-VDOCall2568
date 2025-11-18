@@ -51,32 +51,7 @@ const UserPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-primary-50">
-      {/* Sticky Header with Logo */}
-      <div className="sticky top-0 z-50 bg-white shadow-sm border-b border-primary-200">
-        <div className="max-w-full mx-auto px-2 sm:px-4 md:px-6 py-3">
-          <div className="flex items-center justify-between">
-            <img
-              src="/images/Jula's Herb logo.png"
-              alt="Jula's Herb Logo"
-              className="h-8 sm:h-10 md:h-12 w-auto object-contain"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                // Fallback to text if image fails to load
-              }}
-            />
-            <div className="text-right">
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-primary-700">
-                {APP_CONFIG.APP_NAME}
-              </h1>
-              <p className="text-xs sm:text-sm text-primary-600">
-                {APP_CONFIG.APP_DESCRIPTION}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-gray-50">
       {/* Main Content */}
       <div className="max-w-full mx-auto p-2 sm:p-4 md:p-6">
         {/* Error Display */}
